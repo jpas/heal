@@ -1,0 +1,9 @@
+# cmake
+build
+
+# nix
+result*
+
+# direnv
+.direnv
+.envrc
