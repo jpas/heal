@@ -25,19 +25,20 @@ HEAL depends on:
 
 Version information can be found in [CMakeLists.txt](./CMakeLists.txt).
 
-[Microsoft SEAL]: https://sealcrypto.org/
-[PALISADE]: https://palisade-crypto.org/
-[HElib]: https://homenc.github.io/HElib/
+[Microsoft SEAL]: https://sealcrypto.org
+[PALISADE]: https://palisade-crypto.org
+[HElib]: https://homenc.github.io/HElib
 
 Somtime in the future, we may automatically detect which backends are available
 at runtime. But currently we require the all backends present.
 
 HEAL can built built with:
-- [CMake](), or
+- [CMake], or
 - `nix-build` if the [nix] package manager is available, or
-- `nix build .` if you use [nix flakes] with 
-- [`nix`]() via flakes, or
-- [`nix-build`]()
+- `nix build .` if you use [nix flakes].
+
+[nix]: https://nixos.org
+[nix flakes]: https://https://nixos.wiki/wiki/Flakes
 
 To build with CMake:
 ```
