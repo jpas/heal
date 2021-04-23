@@ -6,17 +6,16 @@
 #include <heal/heal.h>
 #include <heal/backend/seal.h>
 
-#include <algorithm>
 #include <iostream>
-#include <numeric>
+#include <chrono>
 #include <random>
-#include <vector>
 
 using namespace std;
 using namespace heal;
 using namespace heal::backend::seal;
 
 #include "./stats.h"
+
 
 template <typename T>
 struct with_unit {
@@ -39,7 +38,7 @@ class Timer {
     reset();
   };
 
-  template <typename T>
+  template <typename T = chrono::nanoseconds>
   T duration() {
     update();
     return chrono::duration_cast<T>(duration_);
@@ -80,16 +79,19 @@ class Bencher {
  public:
   using results_type = map<string,with_unit<int64_t>>;
 
-  bool loud;
+  ostream* os;
+  chrono::seconds time_minimum;
 
   Bencher()
-    : loud(false),
+    : os(nullptr),
       prefix_(""),
       results_(new results_type())
   { }
 
   Bencher group(string name) {
-    return Bencher(prefix_ + name + "/", *results_);
+    Bencher g = *this;
+    g.prefix_ += name + "/";
+    return g;
   }
 
   void record(string name, int64_t value, string unit) {
@@ -98,8 +100,8 @@ class Bencher {
 
     results_->emplace(full_name, result);
 
-    if (loud) {
-      cout << full_name << ": " << result << endl;
+    if (os) {
+      (*os) << full_name << ": " << result << endl;
     }
   }
 
@@ -118,7 +120,7 @@ class Bencher {
       t.start();
       f(t);
       t.stop();
-    } while (t.duration<chrono::seconds>().count() < 1);
+    } while (t.duration() < time_minimum);
 
     int64_t ns_per_op = t.duration<chrono::nanoseconds>().count() / ops;
     record(name + "/time", ns_per_op, "ns/op");
@@ -130,11 +132,6 @@ class Bencher {
   }
 
  private:
-  Bencher(string prefix, results_type& r)
-    : prefix_(prefix),
-      results_(&r)
-  { }
-
   string prefix_;
   results_type *results_;
 };
@@ -155,27 +152,27 @@ void benchmark_scheme(Bencher b, const B& backend)
   const auto encoded = vec.encode();
   const auto encrypted = encoded.encrypt();
 
-  b.time("encode", [&](Timer& t) {
+  b.time("encode(vector)", [&](Timer& t) {
     vec.encode();
   });
 
-  b.time("decode", [&](Timer& t) {
+  b.time("decode(encoded)", [&](Timer& t) {
     encoded.decode();
   });
 
-  b.time("encrypt/vec", [&](Timer& t) {
+  b.time("encrypt(vector)", [&](Timer& t) {
     vec.encrypt();
   });
 
-  b.time("encrypt/encoded", [&](Timer& t) {
+  b.time("encrypt(encoded)", [&](Timer& t) {
     encoded.encrypt();
   });
 
-  b.time("decrypt/vec", [&](Timer& t) {
+  b.time("decrypt()", [&](Timer& t) {
     encrypted.decrypt();
   });
 
-  b.time("decrypt/encoded", [&](Timer& t) {
+  b.time("decrypt_encoded()", [&](Timer& t) {
     encrypted.decrypt_encoded();
   });
 }
@@ -187,7 +184,7 @@ void benchmark_relinearize(Bencher b, const B& backend)
   auto y = backend.make_vector(1).encrypt();
   backend.multiply_no_maintainance(x, y);
 
-  b.time("relinearize/3->2", [&](Timer& t) {
+  b.time("relinearize(encrypted)", [&](Timer& t) {
     t.stop();
     auto copy = x;
     t.start();
@@ -202,7 +199,7 @@ void benchmark_modulus_switch(Bencher b, const B& backend)
   // TODO: for each level?
   auto x = backend.make_vector(1).encrypt();
 
-  b.time("modulus_switch", [&](Timer& t) {
+  b.time("modulus_switch(encrypted)", [&](Timer& t) {
     t.stop();
     auto copy = x;
     t.start();
@@ -247,53 +244,53 @@ void benchmark_arithmetic(Bencher b, const B& backend)
   const auto e2 = v2.encrypt();
   const auto encoded = v2.encode();
 
-  b.time("add/vec/vec", [&](Timer& t) {
+  b.time("add(vector,vector)", [&](Timer& t) {
     v1 + v2;
   });
 
-  b.time("add/encrypted/encoded", [&](Timer& t) {
+  b.time("add(encrypted,encoded)", [&](Timer& t) {
     e1 + encoded;
   });
 
-  b.time("add/encrypted/encrypted", [&](Timer& t) {
+  b.time("add(encrypted,encrypted)", [&](Timer& t) {
     e1 + e2;
   });
 
-  b.time("subtract/vec/vec", [&](Timer& t) {
+  b.time("subtract(vector,vector)", [&](Timer& t) {
     v1 - v2;
   });
 
-  b.time("subtract/encrypted/encoded", [&](Timer& t) {
+  b.time("subtract(encrypted,encoded)", [&](Timer& t) {
     e1 - encoded;
   });
 
-  b.time("subtract/encrypted/encrypted", [&](Timer& t) {
+  b.time("subtract(encrypted,encrypted)", [&](Timer& t) {
     e1 - e2;
   });
 
-  b.time("multiply/vec/vec", [&](Timer& t) {
+  b.time("multiply(vector,vector)", [&](Timer& t) {
     v1 * v2;
   });
 
-  b.time("multiply/encrypted/encoded", [&](Timer& t) {
+  b.time("multiply(encrypted,encoded)", [&](Timer& t) {
     t.stop();
     auto copy = e1;
     t.start();
-    backend.multiply(copy, encoded);
+    backend.multiply_no_maintainance(copy, encoded);
   });
 
-  b.time("multiply/encrypted/encrypted", [&](Timer& t) {
+  b.time("multiply(encrypted,encrypted)", [&](Timer& t) {
     t.stop();
     auto copy = e1;
     t.start();
-    backend.multiply(copy, e2);
+    backend.multiply_no_maintainance(copy, e2);
   });
 
-  b.time("inner_sum/vec", [&](Timer& t) {
+  b.time("inner_sum(vector)", [&](Timer& t) {
     v1.inner_sum();
   });
 
-  b.time("inner_sum/encrypted", [&](Timer& t) {
+  b.time("inner_sum(encrypted)", [&](Timer& t) {
     e1.inner_sum();
   });
 }
@@ -322,27 +319,27 @@ void benchmark_stats(Bencher b, const B& backend)
   auto enc_y = y.encrypt();
   auto enc_mask = mask.encrypt();
 
-  b.time("average/vec", [&](Timer& t) {
+  b.time("average(vector)", [&](Timer& t) {
     average<B>(x, mask);
   });
 
-  b.time("average/enc", [&](Timer& t) {
+  b.time("average(encrypted)", [&](Timer& t) {
     average<B>(enc_x, enc_mask);
   });
 
-  b.time("variance/vec", [&](Timer& t) {
+  b.time("variance(vector)", [&](Timer& t) {
     variance<B>(x, mask);
   });
 
-  b.time("variance/enc", [&](Timer& t) {
+  b.time("variance(encrypted)", [&](Timer& t) {
     variance<B>(enc_x, enc_mask);
   });
 
-  b.time("covariance/vec", [&](Timer& t) {
+  b.time("covariance(vector)", [&](Timer& t) {
     covariance<B>(x, y, mask);
   });
 
-  b.time("covariance/enc", [&](Timer& t) {
+  b.time("covariance(encrypted)", [&](Timer& t) {
     covariance<B>(enc_x, enc_y, enc_mask);
   });
 }
@@ -358,7 +355,6 @@ void benchmark_bfv(Bencher b, size_t degree_bits)
     .plain_modulus_bits = 12 + degree_bits,
   });
 
-  cout << backend.options() << endl;
   benchmark_scheme(b, backend);
   benchmark_arithmetic(b, backend);
   benchmark_rotate(b, backend);
@@ -377,7 +373,6 @@ void benchmark_ckks(Bencher b, size_t degree_bits)
     .default_scale = pow(2.0, 21),
   });
 
-  cout << backend.options() << endl;
   benchmark_scheme(b, backend);
   benchmark_arithmetic(b, backend);
   benchmark_rotate(b, backend);
@@ -386,7 +381,7 @@ void benchmark_ckks(Bencher b, size_t degree_bits)
 
   {
     auto x = backend.make_vector(1).encrypt();
-    b.time("modulus_rescale", [&](Timer& t) {
+    b.time("modulus_rescale(encrypted)", [&](Timer& t) {
       t.stop();
       auto copy = x;
       t.start();
@@ -397,17 +392,23 @@ void benchmark_ckks(Bencher b, size_t degree_bits)
   benchmark_stats(b, backend);
 }
 
-
-int main()
+int main(int argc, char *argv[])
 {
   Bencher bencher;
-  bencher.loud = true;
+  bencher.os = &cout;
+  bencher.time_minimum = chrono::seconds(1);
 
-  for (size_t degree_bits = 12; degree_bits <= 15; degree_bits += 1) {
-    benchmark_bfv(bencher.group("bfv"), degree_bits);
+  size_t max_degree_bits = 15;
+
+  for (size_t bits = 12; bits <= max_degree_bits; bits += 1) {
+    string id = "bfv/" + to_string(1 << bits);
+    benchmark_bfv(bencher.group(id), bits);
   }
-  for (size_t degree_bits = 13; degree_bits <= 15; degree_bits += 1) {
-    benchmark_ckks(bencher.group("ckks"), degree_bits);
+
+  for (size_t bits = 13; bits <= max_degree_bits; bits += 1) {
+    string id = "ckks/" + to_string(1 << bits);
+    benchmark_ckks(bencher.group(id), bits);
   }
+
   return 0;
 }
