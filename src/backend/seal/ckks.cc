@@ -174,39 +174,43 @@ auto CKKS::modulus_switch(CKKS::encrypted_type& a)
 }
 
 
-auto CKKS::multiply(CKKS::encrypted_type& lhs, const CKKS::encrypted_type& rhs)
-  const -> CKKS::encrypted_type&
+auto CKKS::multiply_no_maintainance(
+  CKKS::encrypted_type& lhs,
+  const CKKS::encrypted_type& rhs
+) const -> CKKS::encrypted_type&
 {
   evaluator_.multiply_inplace(lhs.impl_, rhs.impl_);
   return lhs;
 }
 
 
-auto CKKS::multiply(CKKS::encrypted_type& lhs, const CKKS::encoded_type& rhs)
-  const -> CKKS::encrypted_type&
+auto CKKS::multiply_no_maintainance(
+  CKKS::encrypted_type& lhs,
+  const CKKS::encoded_type& rhs
+) const -> CKKS::encrypted_type&
 {
   evaluator_.multiply_plain_inplace(lhs.impl_, rhs.impl_);
   return lhs;
 }
 
 
-auto CKKS::multiply_full(
+auto CKKS::multiply(
   CKKS::encrypted_type& lhs,
   const CKKS::encrypted_type& rhs
 )
   const -> CKKS::encrypted_type&
 {
-  return modulus_rescale(relinearize(multiply(lhs, rhs)));
+  return modulus_rescale(relinearize(multiply_no_maintainance(lhs, rhs)));
 }
 
 
-auto CKKS::multiply_full(
+auto CKKS::multiply(
   CKKS::encrypted_type& lhs,
   const CKKS::encoded_type& rhs
 )
   const -> CKKS::encrypted_type&
 {
-  return modulus_rescale(multiply(lhs, rhs));
+  return modulus_rescale(multiply_no_maintainance(lhs, rhs));
 }
 
 

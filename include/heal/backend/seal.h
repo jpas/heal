@@ -137,9 +137,9 @@ class BFV {
   auto multiply(encrypted_type& lhs, const encrypted_type& rhs)
    const -> encrypted_type&;
 
-  auto multiply_full(encrypted_type& lhs, const encoded_type& rhs)
+  auto multiply_no_maintainance(encrypted_type& lhs, const encoded_type& rhs)
    const -> encrypted_type&;
-  auto multiply_full(encrypted_type& lhs, const encrypted_type& rhs)
+  auto multiply_no_maintainance(encrypted_type& lhs, const encrypted_type& rhs)
    const -> encrypted_type&;
 
   auto negate(encrypted_type& a)
@@ -238,9 +238,9 @@ class CKKS {
   auto multiply(encrypted_type& lhs, const encrypted_type& rhs)
     const -> encrypted_type&;
 
-  auto multiply_full(encrypted_type& lhs, const encoded_type& rhs)
+  auto multiply_no_maintainance(encrypted_type& lhs, const encoded_type& rhs)
    const -> encrypted_type&;
-  auto multiply_full(encrypted_type& lhs, const encrypted_type& rhs)
+  auto multiply_no_maintainance(encrypted_type& lhs, const encrypted_type& rhs)
    const -> encrypted_type&;
 
   auto negate(encrypted_type& a)
@@ -307,14 +307,14 @@ Encrypted<B> operator*(Encrypted<B> lhs, const Encoded<B>& rhs)
 template <typename B>
 Encrypted<B>& operator*=(Encrypted<B>& lhs, const Encrypted<B>& rhs)
 {
-  return lhs.backend().multiply_full(lhs, rhs);
+  return lhs.backend().multiply(lhs, rhs);
 }
 
 
 template <typename B>
 Encrypted<B>& operator*=(Encrypted<B>& lhs, const Encoded<B>& rhs)
 {
-  return lhs.backend().multiply_full(lhs, rhs);
+  return lhs.backend().multiply(lhs, rhs);
 }
 
 

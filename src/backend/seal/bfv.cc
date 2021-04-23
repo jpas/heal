@@ -149,39 +149,43 @@ auto BFV::make_vector(BFV::scalar_type x)
 }
 
 
-auto BFV::multiply(BFV::encrypted_type& lhs, const BFV::encrypted_type& rhs)
-  const -> BFV::encrypted_type&
+auto BFV::multiply_no_maintainance(
+  BFV::encrypted_type& lhs,
+  const BFV::encrypted_type& rhs
+) const -> BFV::encrypted_type&
 {
   evaluator_.multiply_inplace(lhs.impl_, rhs.impl_);
   return lhs;
 }
 
 
-auto BFV::multiply(BFV::encrypted_type& lhs, const BFV::encoded_type& rhs)
-  const -> BFV::encrypted_type&
+auto BFV::multiply_no_maintainance(
+  BFV::encrypted_type& lhs,
+  const BFV::encoded_type& rhs
+) const -> BFV::encrypted_type&
 {
   evaluator_.multiply_plain_inplace(lhs.impl_, rhs.impl_);
   return lhs;
 }
 
 
-auto BFV::multiply_full(
+auto BFV::multiply(
     BFV::encrypted_type& lhs,
     const BFV::encrypted_type& rhs
 )
   const -> BFV::encrypted_type&
 {
-  return relinearize(multiply(lhs, rhs));
+  return relinearize(multiply_no_maintainance(lhs, rhs));
 }
 
 
-auto BFV::multiply_full(
+auto BFV::multiply(
     BFV::encrypted_type& lhs,
     const BFV::encoded_type& rhs
 )
   const -> BFV::encrypted_type&
 {
-  return relinearize(multiply(lhs, rhs));
+  return relinearize(multiply_no_maintainance(lhs, rhs));
 }
 
 
