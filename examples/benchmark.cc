@@ -38,12 +38,10 @@ class Timer {
     reset();
   };
 
-  with_unit<int64_t> duration() {
+  template <typename T>
+  T duration() {
     update();
-    return with_unit<int64_t>{
-      .value = chrono::duration_cast<chrono::nanoseconds>(duration_).count(),
-      .unit = "ns",
-    };
+    return chrono::duration_cast<T>(duration_);
   }
 
   void reset() {
@@ -118,8 +116,8 @@ class Bencher {
       f(t);
       t.stop();
     }
-    with_unit<int64_t> d = t.duration();
-    record(name + "/time", d.value, d.unit);
+
+    record(name, t.duration<chrono::nanoseconds>().count(), "ns");
   }
 
   const results_type& results() const {
