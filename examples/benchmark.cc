@@ -197,28 +197,85 @@ void benchmark_scheme(Bencher b, const B& backend)
   const auto encoded = vec.encode();
   const auto encrypted = encoded.encrypt();
 
-  b.time("encode", [&](Timer& t){
+  b.time("encode", [&](Timer& t) {
     vec.encode();
   });
 
-  b.time("decode", [&](Timer& t){
+  b.time("decode", [&](Timer& t) {
     encoded.decode();
   });
 
-  b.time("encrypt/vec", [&](Timer& t){
+  b.time("encrypt/vec", [&](Timer& t) {
     vec.encrypt();
   });
 
-  b.time("encrypt/encoded", [&](Timer& t){
+  b.time("encrypt/encoded", [&](Timer& t) {
     encoded.encrypt();
   });
 
-  b.time("decrypt/vec", [&](Timer& t){
+  b.time("decrypt/vec", [&](Timer& t) {
     encrypted.decrypt();
   });
 
-  b.time("decrypt/encoded", [&](Timer& t){
+  b.time("decrypt/encoded", [&](Timer& t) {
     encrypted.decrypt_encoded();
+  });
+}
+
+template <typename B>
+void benchmark_relinearize(Bencher b, const B& backend)
+{
+    auto x1 = backend.make_vector(1).encrypt();
+    auto x2 = backend.make_vector(1).encrypt();
+
+    b.time("relinearize/3->2", [&](Timer& t) {
+        t.stop();
+        auto y = x1 * x2;
+        t.start();
+        backend.relinearize(y);
+    });
+}
+
+
+template <typename B>
+void benchmark_modulus_switch(Bencher b, const B& backend)
+{
+  // TODO: for each level?
+  const auto x = backend.make_vector(1).encrypt();
+
+  b.time("modulus_switch", [&](Timer& t) {
+    t.stop();
+    auto copy = x;
+    t.start();
+    backend.modulus_switch(copy);
+  });
+}
+
+
+template <typename B>
+void benchmark_multiply_depth(Bencher b, const B& backend)
+{
+  const auto v = backend.make_vector(1);
+  const auto e1 = v.encrypt();
+  auto e2 = e1 * e1;
+
+  int depth = 0;
+  while (v == e2.decrypt()) {
+    depth += 1;
+    e2 *= e1;
+  }
+
+  b.record("multiply_depth", depth, "ops");
+}
+
+
+template <typename B>
+void benchmark_rotate(Bencher b, const B& backend)
+{
+  auto x = backend.make_vector(1).encrypt();
+
+  b.time("rotate-by-power-of-two", [&](Timer& t) {
+    x << 1;
   });
 }
 
@@ -231,47 +288,53 @@ void benchmark_arith(Bencher b, const B& backend)
   const auto e2 = v2.encrypt();
   const auto encoded = v2.encode();
 
-  b.time("add/vec/vec", [&](Timer& t){
+  b.time("add/vec/vec", [&](Timer& t) {
     v1 + v2;
   });
 
-  b.time("add/encrypted/encoded", [&](Timer& t){
+  b.time("add/encrypted/encoded", [&](Timer& t) {
     e1 + encoded;
   });
 
-  b.time("add/encrypted/encrypted", [&](Timer& t){
+  b.time("add/encrypted/encrypted", [&](Timer& t) {
     e1 + e2;
   });
 
-  b.time("subtract/vec/vec", [&](Timer& t){
+  b.time("subtract/vec/vec", [&](Timer& t) {
     v1 - v2;
   });
 
-  b.time("subtract/encrypted/encoded", [&](Timer& t){
+  b.time("subtract/encrypted/encoded", [&](Timer& t) {
     e1 - encoded;
   });
 
-  b.time("subtract/encrypted/encrypted", [&](Timer& t){
+  b.time("subtract/encrypted/encrypted", [&](Timer& t) {
     e1 - e2;
   });
 
-  b.time("multiply/vec/vec", [&](Timer& t){
+  b.time("multiply/vec/vec", [&](Timer& t) {
     v1 * v2;
   });
 
-  b.time("multiply/encrypted/encoded", [&](Timer& t){
-    e1 * encoded;
+  b.time("multiply/encrypted/encoded", [&](Timer& t) {
+    t.stop();
+    auto copy = e1;
+    t.start();
+    backend.multiply(copy, encoded);
   });
 
-  b.time("multiply/encrypted/encrypted", [&](Timer& t){
-    e1 * e2;
+  b.time("multiply/encrypted/encrypted", [&](Timer& t) {
+    t.stop();
+    auto copy = e1;
+    t.start();
+    backend.multiply(copy, e2);
   });
 
-  b.time("inner_sum/vec", [&](Timer& t){
+  b.time("inner_sum/vec", [&](Timer& t) {
     v1.inner_sum();
   });
 
-  b.time("inner_sum/encrypted", [&](Timer& t){
+  b.time("inner_sum/encrypted", [&](Timer& t) {
     e1.inner_sum();
   });
 }
@@ -296,19 +359,19 @@ void benchmark_stats(Bencher b, const B& backend)
   auto enc_x = x.encrypt();
   auto enc_mask = mask.encrypt();
 
-  b.time("average/vec", [&](Timer& t){
+  b.time("average/vec", [&](Timer& t) {
     average<B>(x, mask);
   });
 
-  b.time("average/enc", [&](Timer& t){
+  b.time("average/enc", [&](Timer& t) {
     average<B>(enc_x, enc_mask);
   });
 
-  b.time("variance/vec", [&](Timer& t){
+  b.time("variance/vec", [&](Timer& t) {
     variance<B>(x, mask);
   });
 
-  b.time("variance/enc", [&](Timer& t){
+  b.time("variance/enc", [&](Timer& t) {
     variance<B>(enc_x, enc_mask);
   });
 
@@ -329,19 +392,10 @@ void benchmark_bfv(Bencher b, size_t degree_bits)
   cout << backend.options() << endl;
   benchmark_scheme(b, backend);
   benchmark_arith(b, backend);
-
-  {
-    auto x1 = backend.make_vector(1).encrypt();
-    auto x2 = backend.make_vector(1).encrypt();
-
-    b.time("relinearize/3->2", [&](Timer& t){
-        t.stop();
-        auto copy = x1;
-        t.start();
-        backend.relinearize(copy);
-    });
-  }
-
+  benchmark_rotate(b, backend);
+  benchmark_relinearize(b, backend);
+  benchmark_modulus_switch(b, backend);
+  benchmark_multiply_depth(b, backend);
   benchmark_stats(b, backend);
 }
 
@@ -357,24 +411,17 @@ void benchmark_ckks(Bencher b, size_t degree_bits)
   cout << backend.options() << endl;
   benchmark_scheme(b, backend);
   benchmark_arith(b, backend);
+  benchmark_rotate(b, backend);
+  benchmark_relinearize(b, backend);
+  benchmark_modulus_switch(b, backend);
 
   {
-    auto x1 = backend.make_vector(1).encrypt();
-    auto x2 = backend.make_vector(1).encrypt();
-    backend.multiply(x1, x2);
-
-    b.time("relinearize/3->2", [&](Timer& t){
-        t.stop();
-        auto copy = x1;
-        t.start();
-        backend.relinearize(copy);
-    });
-
-    b.time("modulus_rescale", [&](Timer& t){
-        t.stop();
-        auto copy = x1;
-        t.start();
-        backend.modulus_rescale(x1);
+    auto x = backend.make_vector(1).encrypt();
+    b.time("modulus_rescale", [&](Timer& t) {
+      t.stop();
+      auto copy = x;
+      t.start();
+      backend.modulus_rescale(copy);
     });
   }
 
