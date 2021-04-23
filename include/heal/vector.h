@@ -125,6 +125,16 @@ Vector<B> operator-(Vector<B> lhs, const Vector<B>& rhs) {
 }
 
 
+template <typename B>
+auto extract_at(
+    size_t idx,
+    const typename B::vector_type& x
+) -> typename B::scalar_type
+{
+  return x[idx];
+}
+
+
 } // namespace heal
 
 #endif // HEAL_VECTOR_H_

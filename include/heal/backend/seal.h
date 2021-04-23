@@ -425,4 +425,14 @@ inline Encrypted<B> inner_sum(Encrypted<B> a)
 }
 
 
+template <typename B>
+auto extract_at(
+    size_t idx,
+    const typename B::encrypted_type& x
+) -> typename B::scalar_type
+{
+  return x.decrypt()[idx];
+}
+
+
 } // namespace heal::backend::seal

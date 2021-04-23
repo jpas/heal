@@ -143,26 +143,6 @@ std::ostream& operator<<(std::ostream& os, const Bencher b) {
 }
 
 
-template <typename B>
-auto extract_at(
-    size_t idx,
-    const typename B::vector_type& x
-) -> typename B::scalar_type
-{
-  return x[idx];
-}
-
-
-template <typename B>
-auto extract_at(
-    size_t idx,
-    const typename B::encrypted_type& x
-) -> typename B::scalar_type
-{
-  return x.decrypt()[idx];
-}
-
-
 template <typename B, typename T>
 auto
 average(const T& x, const T& mask)
