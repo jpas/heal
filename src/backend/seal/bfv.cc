@@ -131,6 +131,17 @@ auto BFV::add(BFV::encrypted_type& lhs, const BFV::encoded_type& rhs)
 }
 
 
+auto BFV::inner_sum(BFV::encrypted_type& a)
+  const -> BFV::encrypted_type&
+{
+  int rows = vector_size() / 2;
+  for (int i = 1; i < rows; i *= 2) {
+    a += a << i;
+  }
+  return a += ~a;
+}
+
+
 auto BFV::make_vector(BFV::scalar_type x)
   const -> BFV::vector_type
 {
@@ -240,19 +251,6 @@ Encrypted<BFV> operator~(Encrypted<BFV> a)
 {
   a.backend().flip(a);
   return a;
-}
-
-
-template <>
-BFV::encrypted_type Encrypted<BFV>::inner_sum() const
-{
-  Encrypted<BFV> out = *this;
-  int rows = backend().vector_size() / 2;
-  for (int i = 1; i < rows; i *= 2) {
-    out += out << i;
-  }
-  out += ~out;
-  return out;
 }
 
 

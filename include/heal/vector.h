@@ -46,6 +46,10 @@ class Vector {
       return backend().vector_size();
     }
 
+    scalar_type& extract_at(size_t idx) {
+      return (*this)[idx];
+    }
+
     scalar_type& operator[](ssize_t idx) {
       if (idx < 0) {
         idx = size() - idx;
@@ -102,7 +106,8 @@ class Vector {
       return raw_.end();
     }
 
-    Vector<B> inner_sum() const {
+    auto inner_sum() const -> Vector<B>
+    {
       scalar_type sum = (*this)[0];
       for (size_t i = 1; i < size(); i++) {
         sum += (*this)[i];

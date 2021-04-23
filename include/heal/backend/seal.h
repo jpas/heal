@@ -24,9 +24,17 @@ class Encoded {
     return *backend_;
   }
 
-  typename B::vector_type decode() const;
+  auto decode()
+    const -> typename B::vector_type
+  {
+    return backend().decode(*this);
+  }
 
-  typename B::encrypted_type encrypt() const;
+  auto encrypt()
+    const -> typename B::encrypted_type
+  {
+    return backend().encrypt(*this);
+  }
 
  private:
   const B* backend_;
@@ -49,11 +57,29 @@ class Encrypted {
     return *backend_;
   }
 
-  typename B::vector_type decrypt() const;
+  auto decrypt()
+    const -> typename B::vector_type
+  {
+    return backend().decrypt(*this);
+  }
 
-  typename B::encoded_type decrypt_encoded() const;
+  auto decrypt_encoded()
+    const -> typename B::encoded_type
+  {
+    return backend().decrypt_encoded(*this);
+  }
 
-  typename B::encrypted_type inner_sum() const;
+  auto inner_sum() const -> typename B::encrypted_type
+  {
+    typename B::encrypted_type out = *this;
+    return backend().inner_sum(out);
+  }
+
+  auto extract_at(size_t idx)
+    const -> typename B::scalar_type
+  {
+    return decrypt()[idx];
+  }
 
  private:
   const B* backend_;
@@ -95,6 +121,9 @@ class BFV {
     const -> encrypted_type;
 
   auto flip(encrypted_type& a)
+   const -> encrypted_type&;
+
+  auto inner_sum(encrypted_type& a)
    const -> encrypted_type&;
 
   auto make_vector(scalar_type x = 0)
@@ -192,6 +221,9 @@ class CKKS {
   auto encrypt(const vector_type& src)
     const -> encrypted_type;
 
+  auto inner_sum(encrypted_type& a)
+   const -> encrypted_type&;
+
   auto make_vector(scalar_type x = 0)
     const -> vector_type;
 
@@ -259,119 +291,91 @@ CKKS Create(heal::CKKSOptions options);
 
 
 template <typename B>
-inline typename B::vector_type Encoded<B>::decode() const {
-  return backend().decode(*this);
-}
-
-
-template <typename B>
-inline typename B::encrypted_type Encoded<B>::encrypt() const {
-  return backend().encrypt(*this);
-}
-
-
-template <typename B>
-auto Encrypted<B>::decrypt()
-  const -> typename B::vector_type
-{
-  return backend().decrypt(*this);
-}
-
-
-template <typename B>
-auto Encrypted<B>::decrypt_encoded()
-  const -> typename B::encoded_type
-{
-  return backend().decrypt_encoded(*this);
-}
-
-
-template <typename B>
-inline Encrypted<B> operator*(Encrypted<B> lhs, const Encrypted<B>& rhs)
+Encrypted<B> operator*(Encrypted<B> lhs, const Encrypted<B>& rhs)
 {
   return lhs *= rhs;
 }
 
 
 template <typename B>
-inline Encrypted<B> operator*(Encrypted<B> lhs, const Encoded<B>& rhs)
+Encrypted<B> operator*(Encrypted<B> lhs, const Encoded<B>& rhs)
 {
   return lhs *= rhs;
 }
 
 
 template <typename B>
-inline Encrypted<B>& operator*=(Encrypted<B>& lhs, const Encrypted<B>& rhs)
+Encrypted<B>& operator*=(Encrypted<B>& lhs, const Encrypted<B>& rhs)
 {
   return lhs.backend().multiply_full(lhs, rhs);
 }
 
 
 template <typename B>
-inline Encrypted<B>& operator*=(Encrypted<B>& lhs, const Encoded<B>& rhs)
+Encrypted<B>& operator*=(Encrypted<B>& lhs, const Encoded<B>& rhs)
 {
   return lhs.backend().multiply_full(lhs, rhs);
 }
 
 
 template <typename B>
-inline Encrypted<B> operator+(Encrypted<B> lhs, const Encrypted<B>& rhs)
+Encrypted<B> operator+(Encrypted<B> lhs, const Encrypted<B>& rhs)
 {
   return lhs += rhs;
 }
 
 
 template <typename B>
-inline Encrypted<B> operator+(Encrypted<B> lhs, const Encoded<B>& rhs)
+Encrypted<B> operator+(Encrypted<B> lhs, const Encoded<B>& rhs)
 {
   return lhs += rhs;
 }
 
 
 template <typename B>
-inline Encrypted<B>& operator+=(Encrypted<B>& lhs, const Encrypted<B>& rhs)
+Encrypted<B>& operator+=(Encrypted<B>& lhs, const Encrypted<B>& rhs)
 {
   return lhs.backend().add(lhs, rhs);
 }
 
 
 template <typename B>
-inline Encrypted<B>& operator+=(Encrypted<B>& lhs, const Encoded<B>& rhs)
+Encrypted<B>& operator+=(Encrypted<B>& lhs, const Encoded<B>& rhs)
 {
   return lhs.backend().add(lhs, rhs);
 }
 
 
 template <typename B>
-inline Encrypted<B> operator-(Encrypted<B> a)
+Encrypted<B> operator-(Encrypted<B> a)
 {
   return a.backend().negate(a);
 }
 
 
 template <typename B>
-inline Encrypted<B> operator-(Encrypted<B> lhs, const Encrypted<B>& rhs)
+Encrypted<B> operator-(Encrypted<B> lhs, const Encrypted<B>& rhs)
 {
   return lhs -= rhs;
 }
 
 
 template <typename B>
-inline Encrypted<B> operator-(Encrypted<B> lhs, const Encoded<B>& rhs)
+Encrypted<B> operator-(Encrypted<B> lhs, const Encoded<B>& rhs)
 {
   return lhs -= rhs;
 }
 
 
 template <typename B>
-inline Encrypted<B>& operator-=(Encrypted<B>& lhs, const Encrypted<B>& rhs)
+Encrypted<B>& operator-=(Encrypted<B>& lhs, const Encrypted<B>& rhs)
 {
   return lhs.backend().subtract(lhs, rhs);
 }
 
 
 template <typename B>
-inline Encrypted<B>& operator-=(Encrypted<B>& lhs, const Encoded<B>& rhs)
+Encrypted<B>& operator-=(Encrypted<B>& lhs, const Encoded<B>& rhs)
 {
   lhs.backend().subtract(lhs, rhs);
   return lhs;
@@ -379,28 +383,28 @@ inline Encrypted<B>& operator-=(Encrypted<B>& lhs, const Encoded<B>& rhs)
 
 
 template <typename B>
-inline Encrypted<B> operator<<(Encrypted<B> lhs, int k)
+Encrypted<B> operator<<(Encrypted<B> lhs, int k)
 {
   return lhs <<= k;
 }
 
 
 template <typename B>
-inline Encrypted<B>& operator<<=(Encrypted<B>& lhs, int k)
+Encrypted<B>& operator<<=(Encrypted<B>& lhs, int k)
 {
   return lhs.backend().rotate(lhs, k);
 }
 
 
 template <typename B>
-inline Encrypted<B> operator>>(Encrypted<B> lhs, int k)
+Encrypted<B> operator>>(Encrypted<B> lhs, int k)
 {
   return lhs >>= k;
 }
 
 
 template <typename B>
-inline Encrypted<B>& operator>>=(Encrypted<B>& lhs, int k)
+Encrypted<B>& operator>>=(Encrypted<B>& lhs, int k)
 {
   return lhs <<= -k;
 }
@@ -416,23 +420,5 @@ Encrypted<BFV> operator~ <>(Encrypted<BFV> a);
 
 template <>
 Encrypted<CKKS> operator~ <>(Encrypted<CKKS> a);
-
-
-template <typename B>
-inline Encrypted<B> inner_sum(Encrypted<B> a)
-{
-  return a.inner_sum();
-}
-
-
-template <typename B>
-auto extract_at(
-    size_t idx,
-    const typename B::encrypted_type& x
-) -> typename B::scalar_type
-{
-  return x.decrypt()[idx];
-}
-
 
 } // namespace heal::backend::seal

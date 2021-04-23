@@ -141,6 +141,16 @@ auto CKKS::encrypt(const CKKS::vector_type& src)
 }
 
 
+auto CKKS::inner_sum(CKKS::encrypted_type& a)
+  const -> CKKS::encrypted_type&
+{
+  for (int i = 1; i < vector_size(); i *= 2) {
+    a += a << i;
+  }
+  return a;
+}
+
+
 auto CKKS::make_vector(CKKS::scalar_type x)
   const -> CKKS::vector_type
 {
@@ -250,17 +260,6 @@ Encrypted<CKKS> operator~(Encrypted<CKKS> a)
 {
   a.backend().conjugate(a);
   return a;
-}
-
-
-template <>
-Encrypted<CKKS> Encrypted<CKKS>::inner_sum() const
-{
-  Encrypted<CKKS> out = *this;
-  for (int i = 1; i < backend().vector_size(); i *= 2) {
-    out += out << i;
-  }
-  return out;
 }
 
 
