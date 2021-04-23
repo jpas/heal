@@ -16,6 +16,7 @@ using namespace std;
 using namespace heal;
 using namespace heal::backend::seal;
 
+#include "./stats.h"
 
 template <typename T>
 struct with_unit {
@@ -142,53 +143,6 @@ std::ostream& operator<<(std::ostream& os, const Bencher b) {
   return os;
 }
 
-
-template <typename B, typename T>
-auto
-average(const T& x, const T& mask)
-  -> typename B::scalar_type
-{
-  // server side
-
-  auto masked = x * mask;
-
-  auto v_n = mask.inner_sum();
-  auto v_sum = masked.inner_sum();
-
-  // send v_* back to client
-
-  auto n = extract_at<B>(0, v_n);
-  auto sum = extract_at<B>(0, v_sum);
-
-  return sum / n;
-}
-
-
-template <typename B, typename T>
-auto
-variance(const T& x, const T& mask)
-  -> typename B::scalar_type
-{
-  // server side
-
-  auto masked = x * mask;
-  auto v_n = mask.inner_sum();
-  auto v_sum = masked.inner_sum();
-
-  auto squares = masked*masked;
-  auto v_sum_of_squares = squares.inner_sum();
-
-  // send v_* back to client
-
-  auto n = extract_at<B>(0, v_n);
-  auto sum = extract_at<B>(0, v_sum);
-  auto sum_of_squares = extract_at<B>(0, v_sum_of_squares);
-
-  auto moment1 = sum / n;
-  auto moment2 = sum_of_squares / n;
-
-  return moment2 - (moment1*moment1);
-}
 
 template <typename B>
 void benchmark_scheme(Bencher b, const B& backend)
@@ -348,15 +302,19 @@ void benchmark_stats(Bencher b, const B& backend)
 
   random_device rd;
   mt19937 gen(rd());
-  uniform_int_distribution<> data_dist(0, 32);
 
-  generate(x.begin(), x.end(), [&](){ return data_dist(gen); });
-  generate(y.begin(), y.end(), [&](){ return data_dist(gen); });
-
-  uniform_int_distribution<> mask_dist(1, 2);
-  generate(mask.begin(), mask.end(), [&](){ return mask_dist(gen) % 2; });
+  generate(x.begin(), x.end(), [&](){
+    return uniform_int_distribution<>(0, 32)(gen);
+  });
+  generate(y.begin(), y.end(), [&](){
+    return uniform_int_distribution<>(8, 24)(gen);
+  });
+  generate(mask.begin(), mask.end(), [&](){
+    return uniform_int_distribution<>(1, 2)(gen) % 2;
+  });
 
   auto enc_x = x.encrypt();
+  auto enc_y = y.encrypt();
   auto enc_mask = mask.encrypt();
 
   b.time("average/vec", [&](Timer& t) {
@@ -375,7 +333,13 @@ void benchmark_stats(Bencher b, const B& backend)
     variance<B>(enc_x, enc_mask);
   });
 
-  //benchmark_covar(b, x, y);
+  b.time("covariance/vec", [&](Timer& t) {
+    covariance<B>(x, y, mask);
+  });
+
+  b.time("covariance/enc", [&](Timer& t) {
+    covariance<B>(enc_x, enc_y, enc_mask);
+  });
 }
 
 
