@@ -30,7 +30,7 @@
 
           src = ./.;
 
-          nativeBuildInputs = [ cmake ];
+          nativeBuildInputs = [ cmake gdb ];
           buildInputs = [ seal ];
         };
       };

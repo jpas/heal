@@ -50,3 +50,10 @@ To build with `nix`:
 ```
 $ nix build .
 ```
+
+## Tasks
+
+- implement a way to avoid `#include <seal/seal.h>` in public headers
+  - look into pimpl idiom in combination with a public abstract class?
+- automagic degree/level adjustment
+- arithmetic for Encoded and std::vector<T>
