@@ -239,7 +239,7 @@ void benchmark_rotate(Bencher b, const B& backend)
 }
 
 template <typename B>
-void benchmark_arith(Bencher b, const B& backend)
+void benchmark_arithmetic(Bencher b, const B& backend)
 {
   const auto v1 = backend.make_vector(1);
   const auto v2 = backend.make_vector(1);
@@ -360,7 +360,7 @@ void benchmark_bfv(Bencher b, size_t degree_bits)
 
   cout << backend.options() << endl;
   benchmark_scheme(b, backend);
-  benchmark_arith(b, backend);
+  benchmark_arithmetic(b, backend);
   benchmark_rotate(b, backend);
   benchmark_relinearize(b, backend);
   benchmark_modulus_switch(b, backend);
@@ -379,7 +379,7 @@ void benchmark_ckks(Bencher b, size_t degree_bits)
 
   cout << backend.options() << endl;
   benchmark_scheme(b, backend);
-  benchmark_arith(b, backend);
+  benchmark_arithmetic(b, backend);
   benchmark_rotate(b, backend);
   benchmark_relinearize(b, backend);
   benchmark_modulus_switch(b, backend);
