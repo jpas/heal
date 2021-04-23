@@ -200,7 +200,7 @@ template <typename B>
 void benchmark_modulus_switch(Bencher b, const B& backend)
 {
   // TODO: for each level?
-  const auto x = backend.make_vector(1).encrypt();
+  auto x = backend.make_vector(1).encrypt();
 
   b.time("modulus_switch", [&](Timer& t) {
     t.stop();
@@ -212,7 +212,7 @@ void benchmark_modulus_switch(Bencher b, const B& backend)
 
 
 template <typename B>
-void benchmark_multiply_depth(Bencher b, const B& backend)
+void benchmark_maximum_depth(Bencher b, const B& backend)
 {
   const auto v = backend.make_vector(1);
   const auto e1 = v.encrypt();
@@ -224,7 +224,7 @@ void benchmark_multiply_depth(Bencher b, const B& backend)
     e2 *= e1;
   }
 
-  b.record("multiply_depth", depth, "ops");
+  b.record("maximum_depth", depth, "ops");
 }
 
 
@@ -364,7 +364,7 @@ void benchmark_bfv(Bencher b, size_t degree_bits)
   benchmark_rotate(b, backend);
   benchmark_relinearize(b, backend);
   benchmark_modulus_switch(b, backend);
-  benchmark_multiply_depth(b, backend);
+  benchmark_maximum_depth(b, backend);
   benchmark_stats(b, backend);
 }
 
