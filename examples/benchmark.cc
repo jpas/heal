@@ -99,26 +99,30 @@ class Bencher {
     results_->emplace(full_name, result);
 
     if (loud) {
-      cout << full_name << ": " << result << '\n';
+      cout << full_name << ": " << result << endl;
     }
   }
 
   template <typename F>
   void time(string name, F f) {
-    Timer t;
-    // warmup...
-    for (int i = 0; i < 1; i++) {
-      f(t);
+    {
+      // warmup to force a lazy backend.
+      Timer warmup;
+      f(warmup);
     }
 
-    // TODO: run f until we have confidence in the average.
-    for (int i = 0; i < 1; i++) {
+    Timer t;
+    int64_t ops = 0;
+    do {
+      ops += 1;
       t.start();
       f(t);
       t.stop();
-    }
+    } while (t.duration<chrono::seconds>().count() < 1);
 
-    record(name, t.duration<chrono::nanoseconds>().count(), "ns");
+    int64_t ns_per_op = t.duration<chrono::nanoseconds>().count() / ops;
+    record(name + "/time", ns_per_op, "ns/op");
+    record(name + "/ops", ops, "ops");
   }
 
   const results_type& results() const {
