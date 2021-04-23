@@ -183,15 +183,16 @@ void benchmark_scheme(Bencher b, const B& backend)
 template <typename B>
 void benchmark_relinearize(Bencher b, const B& backend)
 {
-    auto x1 = backend.make_vector(1).encrypt();
-    auto x2 = backend.make_vector(1).encrypt();
+  auto x = backend.make_vector(1).encrypt();
+  auto y = backend.make_vector(1).encrypt();
+  backend.multiply_no_maintainance(x, y);
 
-    b.time("relinearize/3->2", [&](Timer& t) {
-        t.stop();
-        auto y = x1 * x2;
-        t.start();
-        backend.relinearize(y);
-    });
+  b.time("relinearize/3->2", [&](Timer& t) {
+    t.stop();
+    auto copy = x;
+    t.start();
+    backend.relinearize(copy);
+  });
 }
 
 
