@@ -53,6 +53,15 @@ class Vector {
       return raw_[idx];
     }
 
+    bool operator==(const Vector<B>& rhs) const {
+      for (size_t i = 0; i < size(); i++) {
+        if ((*this)[i] != rhs[i]) {
+          return false;
+        }
+      }
+      return true;
+    }
+
     const scalar_type operator[](ssize_t idx) const {
       if (idx < 0) {
         idx = size() - idx;
