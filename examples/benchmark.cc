@@ -403,12 +403,12 @@ int main(int argc, char *argv[])
   size_t max_degree_bits = 15;
 
   for (size_t bits = 12; bits <= max_degree_bits; bits += 1) {
-    string id = "bfv/" + to_string(1 << bits);
+    string id = "bfv/seal/" + to_string(1 << bits);
     benchmark_bfv(bencher.group(id), bits);
   }
 
   for (size_t bits = 13; bits <= max_degree_bits; bits += 1) {
-    string id = "ckks/" + to_string(1 << bits);
+    string id = "ckks/seal/" + to_string(1 << bits);
     benchmark_ckks(bencher.group(id), bits);
   }
 

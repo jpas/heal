@@ -9,12 +9,12 @@ from io import StringIO
 def parse_line(line):
     path, result = line.strip().split(': ')
 
-    scheme, degree, *measure = path.split('/')
+    scheme, backend, degree, *measure = path.split('/')
 
     value, unit = result.split(' ')
     value = int(value)
 
-    return (scheme, degree), tuple(measure), (value, unit)
+    return (scheme, backend, degree), tuple(measure), (value, unit)
 
 def main():
     rows = defaultdict(dict)
@@ -24,8 +24,9 @@ def main():
         if measure[-1] == 'ops':
             continue
 
-        scheme, degree = params
+        scheme, backend, degree = params
         rows[params]['scheme'] = scheme
+        rows[params]['backend'] = backend
         rows[params]['degree'] = degree
 
         if measure[0] == 'vector size':
@@ -36,7 +37,7 @@ def main():
         fields.add(field)
         rows[params][field] = result
 
-    fields = ['scheme', 'degree', 'vector size'] + sorted(fields)
+    fields = ['scheme', 'backend', 'degree', 'vector size'] + sorted(fields)
     f = StringIO()
     writer = csv.DictWriter(f, fieldnames=fields)
     writer.writeheader()
