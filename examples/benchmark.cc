@@ -152,6 +152,8 @@ void benchmark_scheme(Bencher b, const B& backend)
   const auto encoded = vec.encode();
   const auto encrypted = encoded.encrypt();
 
+  b.record("vector size", backend.vector_size(), "entries");
+
   b.time("encode(vector)", [&](Timer& t) {
     vec.encode();
   });
