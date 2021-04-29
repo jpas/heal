@@ -69,7 +69,8 @@ class Encrypted {
     return backend().decrypt_encoded(*this);
   }
 
-  auto inner_sum() const -> typename B::encrypted_type
+  auto inner_sum()
+    const -> typename B::encrypted_type
   {
     typename B::encrypted_type out = *this;
     return backend().inner_sum(out);

@@ -121,31 +121,27 @@ class Vector {
 };
 
 
-template <typename B>
-Vector<B> operator*(Vector<B> lhs, const Vector<B>& rhs) {
+template <typename B, typename T>
+Vector<B> operator*(Vector<B> lhs, const T& rhs) {
   return lhs *= rhs;
 }
 
 
-template <typename B>
-Vector<B> operator+(Vector<B> lhs, const Vector<B>& rhs) {
+template <typename B, typename T>
+Vector<B> operator+(Vector<B> lhs, const T& rhs) {
   return lhs += rhs;
 }
 
 
-template <typename B>
-Vector<B> operator-(Vector<B> lhs, const Vector<B>& rhs) {
+template <typename B, typename T>
+Vector<B> operator-(Vector<B> lhs, const T& rhs) {
   return lhs -= rhs;
 }
 
 
-template <typename B>
-auto extract_at(
-    size_t idx,
-    const typename B::vector_type& x
-) -> typename B::scalar_type
-{
-  return x[idx];
+template <typename B, typename T>
+Vector<B> operator/(Vector<B> lhs, const T& rhs) {
+  return lhs /= rhs;
 }
 
 

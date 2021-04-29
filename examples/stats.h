@@ -2,8 +2,7 @@
 #define HEAL_EXAMPLES_STATS_H_
 
 template <typename B, typename T>
-auto
-average(const T& x, const T& mask)
+auto average(const T& x, const T& mask)
   -> typename B::scalar_type
 {
   // server side
@@ -23,8 +22,7 @@ average(const T& x, const T& mask)
 
 
 template <typename B, typename T>
-auto
-variance(const T& x, const T& mask)
+auto variance(const T& x, const T& mask)
   -> typename B::scalar_type
 {
   // Using the naive algorithm with the shortcut formula.
@@ -48,8 +46,8 @@ variance(const T& x, const T& mask)
 
 
 template <typename B, typename T>
-auto
-covariance(const T& x, const T& y, const T& mask)
+auto covariance(const T& x, const T& y, const T& mask)
+  -> typename B::scalar_type
 {
   // Using the naive algorithm with the shortcut formula and use the same mask
   // for x and y.
