@@ -1,6 +1,9 @@
 #ifndef HEAL_EXAMPLES_STATS_H_
 #define HEAL_EXAMPLES_STATS_H_
 
+// XXX: we may sum multiple of the v_* items homomorphically to compute
+// statistics (average, variance, covariance) on many more elements.
+
 template <typename B, typename T>
 auto average(const T& x, const T& mask)
   -> typename B::scalar_type
