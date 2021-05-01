@@ -36,6 +36,18 @@ class Encoded {
     return backend().encrypt(*this);
   }
 
+  auto make_one()
+    const -> typename B::encoded_type
+  {
+    return backend().make_vector(1).encode();
+  }
+
+  auto make_zero()
+    const -> typename B::encoded_type
+  {
+    return backend().make_vector(0).encrypt();
+  }
+
  private:
   const B* backend_;
   ::seal::Plaintext impl_;
@@ -74,6 +86,18 @@ class Encrypted {
   {
     typename B::encrypted_type out = *this;
     return backend().inner_sum(out);
+  }
+
+  auto make_one()
+    const -> typename B::encrypted_type
+  {
+    return backend().make_vector(1).encrypt();
+  }
+
+  auto make_zero()
+    const -> typename B::vector_type
+  {
+    return backend().make_vector(0).encrypt();
   }
 
   auto extract_at(size_t idx)

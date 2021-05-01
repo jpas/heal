@@ -46,7 +46,17 @@ class Vector {
       return backend().vector_size();
     }
 
-    scalar_type& extract_at(size_t idx) {
+    auto make_one() const -> typename B::vector_type
+    {
+      return backend().make_vector(1);
+    }
+
+    auto make_zero() const -> typename B::vector_type
+    {
+      return backend().make_vector(0);
+    }
+
+    const scalar_type& extract_at(size_t idx) {
       return (*this)[idx];
     }
 
