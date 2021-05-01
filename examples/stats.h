@@ -73,4 +73,71 @@ auto covariance(const T& x, const T& y, const T& mask)
   return (sum_xy - sum_x*sum_y/n) / n;
 }
 
+
+template <typename B, typename T>
+auto pow(const T& x, uint64_t n)
+  -> T
+{
+  if (n == 0) {
+    return x.make_one();
+  }
+
+  T y = x;
+  while (n > 0) {
+    if (n%2 == 1) {
+      y *= x;
+    }
+
+    n >>= 1;
+    y *= y;
+  }
+
+  return y;
+}
+
+// Returns a vector of the powers \(x^k\) where \(0 <= k <= n\). Each power is
+// computed using \(O(\log(k))\) multiplications.
+template <typename B, typename T>
+auto pow_up_to(const T& x, uint64_t n)
+  -> vector<T>
+{
+  vector<T> powers(n+1);
+  powers[0] = x.make_one();
+
+  if (n >= 1) {
+    powers[1] = x;
+  }
+
+  for (uint64_t i = 2; i <= n; i += 1) {
+    if (i%2 == 0) {
+      powers[i] = powers[i/2] * powers[i/2];
+    } else {
+      powers[i] = powers[i-1] * x;
+    }
+  }
+
+  return powers;
+}
+
+
+// Computes the approximation \(e^x \approx \sum^{n}_{k=0} \frac{x^k}{k!}\).
+// The final term is computed using \(O(\log(n))\) multiplications.
+template <typename B, typename T>
+auto exp_approx(const T& x, uint64_t n) -> T
+{
+  // This algorithm is unsuitible for CKKS schemes as each successive power
+  // will be at a lower level to keep scaling for addition.
+  vector<T> powers = powers_up_to(x, n);
+
+  T y = x.make_one();
+  uint64_t factorial = 1;
+  for (uint64_t k = 1; k <= n; k += 1) {
+    factorial *= k;
+    y += powers[k] / factorial;
+  }
+
+  return y;
+}
+
+
 #endif // HEAL_EXAMPLES_STATS_H_
