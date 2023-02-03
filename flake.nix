@@ -1,5 +1,5 @@
 {
-  description = "A very basic flake";
+  description = "A homomorphic encryption adapter library";
 
   inputs = {
     nixpkgs-he.url = "github:jpas/nixpkgs-he";
